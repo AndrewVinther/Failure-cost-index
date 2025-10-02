@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Failure Cost Index Calculator</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { margin-top: 40px; }
+    .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+    label { display: block; margin-top: 10px; }
+    input[type="number"] { width: 100px; }
+    .result { font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Failure Cost Index Calculator</h1>
+
+  <div id="calculator"></div>
+
+  <script>
+    var firebaseConfig = {
+      apiKey: "AIzaSyAWjw0Z2dvJ1NoKfKKuY2cdb4cfTAdXXRs",
+      authDomain: "failure-cost-index.firebaseapp.com",
+      databaseURL: "https://failure-cost-index-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "failure-cost-index",
+      storageBucket: "failure-cost-index.firebasestorage.app",
+      messagingSenderId: "707480339831",
+      appId: "1:707480339831:web:ffc8d8ed3fc9ce16ce4d72",
+      measurementId: "G-X9LSQPTNGQ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+
+    const sectors = ["China", "USA", "Denmark", "Thailand", "Slovakia"];
+    const container = document.getElementById("calculator");
+
+    sectors.forEach(sector => {
+      const div = document.createElement("div");
+      div.className = "section";
+      div.innerHTML = `
+        <h2>${sector}</h2>
+        <label>Set Hourly Wage: <input type="number" id="${sector}-wage" /></label>
+        <label>Multiplying Factor: <input type="number" id="${sector}-factor" /></label>
+        <label>Workdays in Month: <input type="number" id="${sector}-days" /></label>
+        <div class="result" id="${sector}-result">Result: </div>
+      `;
+      container.appendChild(div);
+
+      const wageInput = div.querySelector(`#${sector}-wage`);
+      const factorInput = div.querySelector(`#${sector}-factor`);
+      const daysInput = div.querySelector(`#${sector}-days`);
+      const resultDiv = div.querySelector(`#${sector}-result`);
+
+      function calculateAndSave() {
+        const wage = parseFloat(wageInput.value) || 0;
+        const factor = parseFloat(factorInput.value) || 0;
+        const days = parseFloat(daysInput.value) || 1;
+        const result = (wage * factor) / days;
+        resultDiv.textContent = "Result: " + result.toFixed(2);
+        db.ref("sectors/" + sector).set({ wage, factor, days });
+      }
+
+      [wageInput, factorInput, daysInput].forEach(input => {
+        input.addEventListener("input", calculateAndSave);
+      });
+
+      db.ref("sectors/" + sector).once("value").then(snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          wageInput.value = data.wage;
+          factorInput.value = data.factor;
+          daysInput.value = data.days;
+          calculateAndSave();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
